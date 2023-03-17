@@ -6,7 +6,7 @@ import contextlib
 import numpy as np
 import classify_nsfw
 from flask_cors import CORS
-
+from PIL import Image
 
 def make_transformer(nsfw_net):
     # Load transformer
@@ -76,10 +76,22 @@ def classify_from_url(image_entry, nsfw_net):
     headers = {'User-agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5'}
 
     try:
-        req = urllib2.Request(image_entry["url"], None, headers)
-        with contextlib.closing(urllib2.urlopen(req)) as stream:
-            score = classify(stream.read(), nsfw_net)
+        url = image_entry["url"]
+        # if it is a base64 encoded image
+        if url.startswith("data:image"):
+            # get the image data
+            image_data = url.split(",")[1]
+            # decode the data
+            image_data = Image.open(BytesIO(image_bytes))
+            # classify
+            score = classify(image_data, nsfw_net)
             result = {'score': score}
+        else:
+            # Otherwise assume it's a URL
+            req = urllib2.Request(url, None, headers)
+            with contextlib.closing(urllib2.urlopen(req)) as stream:
+                score = classify(stream.read(), nsfw_net)
+                result = {'score': score}
     except urllib2.HTTPError, e:
         result = {'error_code': e.code, 'error_reason': e.reason}
     except urllib2.URLError, e:
