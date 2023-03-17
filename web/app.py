@@ -65,6 +65,18 @@ def single_classify():
     else:
         return "Missing  url parameter", 400
 
+@app.route('/classify', methods=['POST'])
+def single_classify_post():
+    # get url in body of request
+    req_json = request.get_json(force=True)
+    if "url" in req_json:
+        url = req_json["url"]
+        single_image = {'url': url}
+        result = classify_from_urls([single_image]).next()
+        return jsonify(result)
+    else:
+        return "Missing  url parameter", 400
+
 
 def classify_from_urls(image_entries):
     for e in image_entries:
