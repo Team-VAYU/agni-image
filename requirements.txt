@@ -5,4 +5,4 @@ Werkzeug
 gevent
 Flask-Cors
 pillow
-opencv-python
+opencv-python==4.2.0.32
