@@ -4,3 +4,4 @@ venv
 .idea/
 check.py
 *.png
+test.py

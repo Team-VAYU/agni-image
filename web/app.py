@@ -1,12 +1,14 @@
 import base64
 from flask import Flask, request, Response, jsonify
 import json
+import cv2
 import urllib2
 import caffe
 import contextlib
 import numpy as np
 import classify_nsfw
 from io import BytesIO
+import tempfile
 from flask_cors import CORS
 from PIL import Image
 
@@ -75,6 +77,34 @@ def single_classify_post():
         single_image = {'url': url}
         result = classify_from_urls([single_image]).next()
         return jsonify(result)
+    else:
+        return "Missing  url parameter", 400
+
+@app.route('/video', methods=['POST'])
+def video_classify(nsfw_net):
+    req_json = request.get_json(force=True)
+    if "url" in req_json:
+        url = req_json["url"]
+        cap = cv2.VideoCapture(url)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        interval = int(fps)
+        count = 0
+        i = 0
+        while(cap.isOpened()):
+            ret, frame = cap.read()
+            if ret == False:
+                break
+            if count % interval == 0:
+                # save frame as image in temp file
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as f:
+                    # save to a temp png file
+                    cv2.imwrite(f.name, frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+                    # read the image data
+                    with open(f.name, 'rb') ad f:
+                        score = classify(f.read(), nsfw_net)
+                        if score > 0.4:
+                            result = {'url': url, 'score': score, 'flagged': True}
+                            return jsonify(result)
     else:
         return "Missing  url parameter", 400
 

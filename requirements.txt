@@ -5,3 +5,4 @@ Werkzeug
 gevent
 Flask-Cors
 pillow
+opencv-python
